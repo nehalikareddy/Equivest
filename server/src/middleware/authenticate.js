@@ -3,8 +3,10 @@ import User from '../models/User.js';
 
 export async function authenticate(request, _response, next) {
   const authorization = request.get('authorization') || '';
-  const [scheme, token] = authorization.split(' ');
-  if (scheme !== 'Bearer' || !token) {
+  const bearerMatch = authorization.match(/^Bearer\s+(.+)$/i);
+  const cookieToken = (request.headers.cookie || '').split(';').map((part) => part.trim()).find((part) => part.startsWith('token='))?.slice('token='.length);
+  const token = bearerMatch ? bearerMatch[1] : authorization ? null : cookieToken;
+  if (!token) {
     return next(Object.assign(new Error('Authentication required.'), { status: 401 }));
   }
   try {

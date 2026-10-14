@@ -31,9 +31,9 @@ Matching is deterministic and explainable. It awards 40 points for a preferred i
 
 ## Authentication and security
 
-Passwords are stored as bcrypt hashes. The API signs JWT bearer tokens with `JWT_SECRET`; the browser currently keeps the token in `sessionStorage` and sends it in the `Authorization` header. This limits persistence to a browser tab session, but JavaScript running on the page can access the token, so XSS remains a security risk. HTTP-only cookie authentication and cookie-specific CSRF protection are not implemented in this version.
+Passwords are stored as bcrypt hashes. The API signs JWTs with `JWT_SECRET` and sets them in an HTTP-only `token` cookie on registration and login (`SameSite=Lax`, `Path=/`, and `Secure` in production). The JSON response continues to include `{ token, user }` for API compatibility, but the client uses the cookie and does not persist the token in JavaScript-accessible storage. `POST /auth/logout` clears the cookie. The client sends credentials and adds `X-Requested-With: XMLHttpRequest` to state-changing requests. The server accepts cookie-authenticated state changes only with a matching configured `Origin`/`Referer` or that custom header; requests with a mismatched origin/referer are rejected. Legacy bearer authorization remains supported.
 
-The server applies Helmet, allows the configured `CLIENT_URL` origin, limits JSON request bodies to 1 MB, validates request data with Zod, rate-limits registration and login to 20 requests per 15 minutes, and checks role/resource ownership on protected routes. `JWT_SECRET` must be at least 32 characters, and `MONGODB_URI` must be configured before the API starts. Production responses hide unexpected server errors; pitch-analysis responses expose only controlled, safe messages.
+The server applies Helmet, enables credentialed CORS for the configured `CLIENT_URL`, limits JSON request bodies to 1 MB, validates request data with Zod, rate-limits registration and login to 20 requests per 15 minutes (bypassed in the test environment), and checks role/resource ownership on protected routes. Cookie-authenticated state-changing requests receive CSRF origin/referer and custom-header checks. `JWT_SECRET` must be at least 32 characters, and `MONGODB_URI` must be configured before the API starts. Production responses hide unexpected server errors; pitch-analysis responses expose only controlled, safe messages.
 
 ## API
 
@@ -43,7 +43,8 @@ All routes are under `/api`.
 | --- | --- | --- | --- |
 | `GET` | `/health` | Public | API health status |
 | `POST` | `/auth/register` | Public | Register a founder or investor |
-| `POST` | `/auth/login` | Public | Authenticate and receive a bearer token |
+| `POST` | `/auth/login` | Public | Authenticate, set the HTTP-only cookie, and return `{ token, user }` |
+| `POST` | `/auth/logout` | Public | Clear the HTTP-only session cookie |
 | `GET` | `/auth/me` | Authenticated | Return the current user |
 | `POST` | `/startups` | Founder | Create a startup profile |
 | `GET` | `/startups/mine` | Founder | List the current founder's startups |
@@ -56,7 +57,7 @@ All routes are under `/api`.
 | `GET` | `/shortlist` | Investor | List the current investor's saved startups |
 | `POST` / `DELETE` | `/shortlist/:startupId` | Investor | Add or remove a startup from the shortlist |
 
-Successful login and registration return `{ user, token }`. Never place real secrets in API requests or source control.
+Successful login and registration set the HTTP-only session cookie and return `{ user, token }`. For cookie-authenticated state changes, send a matching `Origin` or `Referer`, or `X-Requested-With: XMLHttpRequest`; a mismatched origin/referer is rejected. Never place real secrets in API requests or source control.
 
 ## Optional AI pitch feedback
 
@@ -101,7 +102,6 @@ The backend tests use an in-memory MongoDB and do not target a configured produc
 
 ## Current limitations and release status
 
-- Cookie-based auth and CSRF protection are not implemented yet; see the security section before deployment.
 - AI feedback requires a valid server-side provider key and was tested with mocked provider responses only.
 - No deployment target or public repository URL is configured or claimed.
 - The tests cover core routes and UI workflows but are not a claim of complete test coverage or production readiness.

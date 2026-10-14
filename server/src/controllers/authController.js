@@ -1,16 +1,31 @@
 import { currentUser, loginUser, registerUser } from '../services/authService.js';
 
+const tokenCookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+};
+
 export async function register(request, response, next) {
   try {
     const result = await registerUser(request.validatedBody);
+    response.cookie('token', result.token, tokenCookieOptions);
     response.status(201).json(result);
   } catch (error) { next(error); }
 }
 
 export async function login(request, response, next) {
   try {
-    response.json(await loginUser(request.validatedBody));
+    const result = await loginUser(request.validatedBody);
+    response.cookie('token', result.token, tokenCookieOptions);
+    response.json(result);
   } catch (error) { next(error); }
+}
+
+export function logout(_request, response) {
+  response.clearCookie('token', tokenCookieOptions);
+  response.json({ message: 'Logged out' });
 }
 
 export function me(request, response) {

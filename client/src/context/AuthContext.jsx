@@ -9,27 +9,25 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true;
-    if (!sessionStorage.getItem('equivest_token')) {
-      setIsLoading(false);
-      return () => { active = false; };
-    }
+    const clearSession = () => { sessionStorage.removeItem('equivest_token'); if (active) setUser(null); };
+    window.addEventListener('equivest:session-expired', clearSession);
     authApi.getCurrentUser()
       .then(({ user: currentUser }) => { if (active) setUser(currentUser); })
       .catch(() => { sessionStorage.removeItem('equivest_token'); if (active) setUser(null); })
       .finally(() => { if (active) setIsLoading(false); });
-    return () => { active = false; };
+    return () => { active = false; window.removeEventListener('equivest:session-expired', clearSession); };
   }, []);
 
-  const acceptSession = useCallback(({ user: nextUser, token }) => {
-    sessionStorage.setItem('equivest_token', token);
+  const acceptSession = useCallback(({ user: nextUser }) => {
+    sessionStorage.removeItem('equivest_token');
     setUser(nextUser);
     return nextUser;
   }, []);
   const signIn = useCallback(async (credentials) => acceptSession(await authApi.login(credentials)), [acceptSession]);
   const signUp = useCallback(async (data) => acceptSession(await authApi.register(data)), [acceptSession]);
-  const signOut = useCallback(() => {
-    sessionStorage.removeItem('equivest_token');
-    setUser(null);
+  const signOut = useCallback(async () => {
+    try { await authApi.logout(); } catch { /* The local session still closes if the server is unreachable. */ }
+    finally { sessionStorage.removeItem('equivest_token'); setUser(null); }
   }, []);
 
   const value = useMemo(() => ({ user, isLoading, signIn, signUp, signOut }), [user, isLoading, signIn, signUp, signOut]);

@@ -10,8 +10,28 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+const clientOrigin = new URL(clientUrl).origin;
+app.use(cors({ origin: clientUrl, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
+
+app.use((request, response, next) => {
+  const method = request.method.toUpperCase();
+  const changesState = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+  const hasCookieToken = (request.headers.cookie || '').split(';').some((part) => part.trim().startsWith('token='));
+  const hasBearer = /^Bearer\s+\S+/i.test(request.get('authorization') || '');
+  if (!changesState || !hasCookieToken || hasBearer) return next();
+
+  const suppliedOrigin = request.get('origin') || request.get('referer');
+  if (suppliedOrigin) {
+    try {
+      if (new URL(suppliedOrigin).origin === clientOrigin) return next();
+    } catch { /* invalid origin/referer is rejected below */ }
+    return response.status(403).json({ error: 'Invalid or missing CSRF protection.' });
+  }
+  if (request.get('x-requested-with') === 'XMLHttpRequest') return next();
+  return response.status(403).json({ error: 'Invalid or missing CSRF protection.' });
+});
 
 app.get('/api/health', (_request, response) => {
   response.status(200).json({ status: 'ok', service: 'equivest-api' });
