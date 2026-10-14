@@ -43,3 +43,13 @@ pm.cmd run build succeeded (1,650 modules transformed).
 - Generated changes: Added server Startup model, constants, startupValidators, startupService, startupController, startupRoutes, and server/tests/startups.test.js; added client startupApi, FounderDashboard, StartupFormPage, and client/src/tests/startupPages.test.jsx.
 - Validation: Verified founder CRUD, role restrictions (investors blocked from founder management routes), and cross-founder ownership protection via server and client test suites.
 - Outcome: Founder startup management completed and verified.
+
+### Task: Phase 3 investor preferences and explainable matching
+
+- Date/time: 2026-10-14
+- Goal: Implement investor preference configuration and deterministic 100-point startup matching algorithm with component explanations, filters, and sorting.
+- Prompt summary: Implement InvestorProfile model, preference endpoints, explainable matching service (40 industry, 30 stage with adjacency, 30 funding ticket with 25% tolerance), investor UI pages, and tests.
+- Generated changes: Added InvestorProfile model, investorValidators, investorService, matchingService, investorController, investorRoutes, matchRoutes, and server tests (investor.test.js, matching.test.js); added investorApi, matchApi, InvestorPreferencesPage, InvestorDashboard, and client/src/tests/investorPages.test.jsx; updated testSetup.js, App.jsx, and server/src/app.js.
+- Validation: First client test run failed due to missing Testing Library DOM cleanup between tests; added afterEach cleanup in client/src/testSetup.js. Reran npm.cmd run test:server (24 passed across 4 suites), npm.cmd run test:client (8 passed across 3 suites), and npm.cmd run build (1,657 modules transformed).
+- Corrections: Added explicit DOM cleanup between Vitest tests and documented matching weights as heuristic product choices rather than financial advice.
+- Outcome: Phase 3 investor preferences and matching engine completed and verified.

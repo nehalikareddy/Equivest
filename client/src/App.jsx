@@ -4,6 +4,10 @@ import { useAuth } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/common/ProtectedRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+import FounderDashboard from './pages/FounderDashboard.jsx';
+import StartupFormPage from './pages/StartupFormPage.jsx';
+import InvestorDashboard from './pages/InvestorDashboard.jsx';
+import InvestorPreferencesPage from './pages/InvestorPreferencesPage.jsx';
 
 function LandingPage() {
   const { user, isLoading } = useAuth();
@@ -43,24 +47,6 @@ function LandingPage() {
   );
 }
 
-function AccountLanding({ role }) {
-  const { user, signOut } = useAuth();
-  return (
-    <main className="account-shell">
-      <header className="topbar">
-        <Link className="brand" to="/"><span className="brand-mark"><CircleDollarSign size={21} /></span><span>EquiVest</span></Link>
-        <button className="nav-link button-link" onClick={signOut}>Sign out</button>
-      </header>
-      <section className="account-welcome">
-        <p className="eyebrow">{role} account</p>
-        <h1>Welcome, {user.name}</h1>
-        <p>Your account is ready. Profile and discovery tools will arrive in the next development phase.</p>
-        <Link to="/" className="primary-link">Back to home <ArrowRight size={18} /></Link>
-      </section>
-    </main>
-  );
-}
-
 function RoleRedirect() {
   const { user } = useAuth();
   return <Navigate to={user.role === 'founder' ? '/founder' : '/investor'} replace />;
@@ -72,8 +58,15 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route element={<ProtectedRoute role="founder" />}><Route path="/founder" element={<AccountLanding role="Founder" />} /></Route>
-      <Route element={<ProtectedRoute role="investor" />}><Route path="/investor" element={<AccountLanding role="Investor" />} /></Route>
+      <Route element={<ProtectedRoute role="founder" />}>
+        <Route path="/founder" element={<FounderDashboard />} />
+        <Route path="/founder/startups/new" element={<StartupFormPage />} />
+        <Route path="/founder/startups/:startupId/edit" element={<StartupFormPage />} />
+      </Route>
+      <Route element={<ProtectedRoute role="investor" />}>
+        <Route path="/investor" element={<InvestorDashboard />} />
+        <Route path="/investor/preferences" element={<InvestorPreferencesPage />} />
+      </Route>
       <Route element={<ProtectedRoute />}><Route path="/account" element={<RoleRedirect />} /></Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

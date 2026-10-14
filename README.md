@@ -41,6 +41,18 @@ API endpoints:
 - `GET /api/auth/me` — return the authenticated account
 - `GET /api/health` — API health status
 
+## Investor preferences and matching
+
+Investors can set preferred industries and stages and an INR ticket range. The matching service is a pure JavaScript function and assigns 40 points for an industry match, 30 for an exact stage (15 for an adjacent stage), and 30 for a funding request within range (15 when it is no more than 25% outside a boundary). The `Idea` to `Pre-Seed` transition is adjacent. Results include criterion-level reasons and rank by descending score, then startup name.
+
+These weights are initial product design choices; they are not validated investment predictions or investment advice. Match filtering supports industry and stage, and sorting supports score or requested amount.
+
+Investor APIs:
+
+- `GET /api/investor/profile` — get or initialize the authenticated investor’s preferences
+- `PUT /api/investor/profile` — validate and save preferences
+- `GET /api/matches` — ranked, explained startups; optional `industry`, `stage`, and `sort=score|amount` filters
+
 ## Verification
 
 - `npm.cmd run dev` starts client and server together.
