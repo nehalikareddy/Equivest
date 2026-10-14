@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CircleDollarSign, Plus, Trash2 } from 'lucide-react';
-import { deleteStartup, listMyStartups } from '../api/startupApi.js';
+import { ArrowRight, CircleDollarSign, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { analyzeStartupPitch, deleteStartup, listMyStartups } from '../api/startupApi.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const money = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
@@ -11,6 +11,7 @@ export default function FounderDashboard() {
   const [startups, setStartups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pitchAnalyses, setPitchAnalyses] = useState({});
 
   const loadStartups = useCallback(async () => {
     setError('');
@@ -29,6 +30,16 @@ export default function FounderDashboard() {
       await deleteStartup(startup.id);
       setStartups((current) => current.filter((item) => item.id !== startup.id));
     } catch (deleteError) { setError(deleteError.response?.data?.error || 'Could not delete this startup. Try again.'); }
+  }
+
+  async function handleAnalyze(startup) {
+    setPitchAnalyses((current) => ({ ...current, [startup.id]: { loading: true, error: '', analysis: null } }));
+    try {
+      const { analysis } = await analyzeStartupPitch(startup.id);
+      setPitchAnalyses((current) => ({ ...current, [startup.id]: { loading: false, error: '', analysis } }));
+    } catch (analysisError) {
+      setPitchAnalyses((current) => ({ ...current, [startup.id]: { loading: false, error: analysisError.response?.data?.error || 'Could not analyze this pitch. Please retry.', analysis: null } }));
+    }
   }
 
   return (
@@ -51,7 +62,13 @@ export default function FounderDashboard() {
             <div className="startup-card-top"><span className="industry-pill">{startup.industry}</span><span className="stage-pill">{startup.stage}</span></div>
             <h2>{startup.name}</h2><p className="startup-tagline">{startup.tagline}</p>
             <dl className="startup-facts"><div><dt>Funding sought</dt><dd>{money.format(startup.amountSought)}</dd></div><div><dt>Location</dt><dd>{startup.location || 'Not specified'}</dd></div></dl>
-            <div className="startup-actions"><Link className="secondary-link" to={`/founder/startups/${startup.id}/edit`}>Edit profile</Link><button className="icon-button danger-button" aria-label={`Delete ${startup.name}`} onClick={() => handleDelete(startup)}><Trash2 size={17} /></button></div>
+            <div className="startup-actions"><Link className="secondary-link" to={`/founder/startups/${startup.id}/edit`}>Edit profile</Link><button className="secondary-link" onClick={() => handleAnalyze(startup)} disabled={pitchAnalyses[startup.id]?.loading}><Sparkles size={16} />{pitchAnalyses[startup.id]?.loading ? 'Analyzing…' : 'Analyze pitch'}</button><button className="icon-button danger-button" aria-label={`Delete ${startup.name}`} onClick={() => handleDelete(startup)}><Trash2 size={17} /></button></div>
+            {pitchAnalyses[startup.id]?.error && <div className="form-alert" role="alert">{pitchAnalyses[startup.id].error} <button className="inline-button" onClick={() => handleAnalyze(startup)}>Retry</button></div>}
+            {pitchAnalyses[startup.id]?.analysis && <section className="pitch-analysis" aria-label={`${startup.name} pitch analysis`}>
+              <h3>Pitch feedback</h3><p>{pitchAnalyses[startup.id].analysis.summary}</p>
+              {['strengths', 'missingInformation', 'suggestions'].map((key) => <div key={key}><h4>{key === 'missingInformation' ? 'Missing or weak information' : key[0].toUpperCase() + key.slice(1)}</h4><ul>{pitchAnalyses[startup.id].analysis[key].map((item, index) => <li key={`${key}-${index}`}>{item}</li>)}</ul></div>)}
+              <small>AI generated feedback may be inaccurate and is not investment advice.</small>
+            </section>}
           </article>)}
         </section>
       )}

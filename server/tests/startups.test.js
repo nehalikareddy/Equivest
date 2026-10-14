@@ -92,4 +92,42 @@ describe('startup API', () => {
     await request(app).delete(`/api/startups/${id}`).set('Authorization', `Bearer ${founderToken}`).expect(204);
     await request(app).get(`/api/startups/${id}`).set('Authorization', `Bearer ${investorToken}`).expect(404);
   });
+
+  test('analyzes only an owned founder pitch and returns structured feedback', async () => {
+    const created = await request(app).post('/api/startups').set('Authorization', `Bearer ${founderToken}`).send(payload).expect(201);
+    const id = created.body.startup.id;
+    const previousKey = process.env.AI_PROVIDER_API_KEY;
+    const previousFetch = globalThis.fetch;
+    process.env.AI_PROVIDER_API_KEY = 'test-provider-key';
+    globalThis.fetch = async (_url, options) => {
+      const providerRequest = JSON.parse(options.body);
+      expect(providerRequest.messages[1].content).toBe(payload.pitch);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ choices: [{ message: { content: JSON.stringify({
+          summary: 'A clear problem with a credible solution.',
+          strengths: ['Defines the customer problem'],
+          missingInformation: ['Add market sizing'],
+          suggestions: ['Include customer validation data']
+        }) } }] })
+      };
+    };
+    try {
+      await request(app).post(`/api/startups/${id}/analyze`).expect(401);
+      await request(app).post(`/api/startups/${id}/analyze`).set('Authorization', `Bearer ${investorToken}`).expect(403);
+      await request(app).post(`/api/startups/${id}/analyze`).set('Authorization', `Bearer ${anotherFounderToken}`).expect(404);
+      const response = await request(app).post(`/api/startups/${id}/analyze`).set('Authorization', `Bearer ${founderToken}`).expect(200);
+      expect(response.body.analysis).toEqual({
+        summary: 'A clear problem with a credible solution.',
+        strengths: ['Defines the customer problem'],
+        missingInformation: ['Add market sizing'],
+        suggestions: ['Include customer validation data']
+      });
+    } finally {
+      globalThis.fetch = previousFetch;
+      if (previousKey === undefined) delete process.env.AI_PROVIDER_API_KEY;
+      else process.env.AI_PROVIDER_API_KEY = previousKey;
+    }
+  });
 });

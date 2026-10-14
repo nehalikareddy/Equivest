@@ -1,6 +1,7 @@
 import {
   createStartup, deleteFounderStartup, getStartup, listFounderStartups, updateFounderStartup
 } from '../services/startupService.js';
+import { analyzeStartupPitch } from '../services/pitchAnalysisService.js';
 
 export async function create(request, response, next) {
   try {
@@ -28,5 +29,12 @@ export async function remove(request, response, next) {
   try {
     await deleteFounderStartup(request.params.id, request.user._id);
     response.status(204).end();
+  } catch (error) { next(error); }
+}
+
+export async function analyze(request, response, next) {
+  try {
+    const startup = await getStartup(request.params.id, request.user);
+    response.json({ analysis: await analyzeStartupPitch(startup.pitch) });
   } catch (error) { next(error); }
 }

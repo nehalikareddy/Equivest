@@ -63,3 +63,13 @@ pm.cmd run build succeeded (1,650 modules transformed).
 - Validation: First client test run failed due to missing Testing Library DOM cleanup between tests; added afterEach cleanup in client/src/testSetup.js. Reran npm.cmd run test:server (24 passed across 4 suites), npm.cmd run test:client (8 passed across 3 suites), and npm.cmd run build (1,657 modules transformed).
 - Corrections: Added explicit DOM cleanup between Vitest tests and documented matching weights as heuristic product choices rather than financial advice.
 - Outcome: Phase 3 investor preferences and matching engine completed and verified.
+
+### Task: Phase 6 optional structured pitch analysis
+
+- Date/time: 2026-10-14
+- Goal: Add optional, founder-only AI pitch feedback with predictable structured output and a clear unavailable state when credentials are missing.
+- Prompt summary: Implement a separate pitch analysis service, validate provider output, protect the endpoint by startup ownership, add the founder dashboard feedback UI and mock provider behavior in tests.
+- Generated changes: Added the founder-only `POST /api/startups/:id/analyze` route, a server-side OpenAI-compatible provider call with Zod validation and safe timeout/rate/provider error handling, the optional analysis UI with retry and investment-advice disclaimer, and backend/frontend coverage. The service reads the pitch from the founder's saved startup and does not log it or expose the provider key.
+- Validation: `npm.cmd run test:server` passed 6 suites and 35 tests, including mocked provider success, missing key, malformed/incomplete output, provider failures, timeout, and ownership checks. `npm.cmd run test:client` passed 4 files and 12 tests, including feedback and the unconfigured-provider retry UI. `npm.cmd run build` succeeded after transforming 1,660 modules. Client tests and build required filesystem access because sandboxed esbuild could not read the Vite config. No live provider request was made.
+- Corrections: Added explicit cleanup to the startup page tests after the first client run found prior rendered dashboard elements leaking into a retry test.
+- Outcome: Optional pitch analysis is implemented and verified with mocked provider responses; real AI feedback remains dependent on setting `AI_PROVIDER_API_KEY` on the server.

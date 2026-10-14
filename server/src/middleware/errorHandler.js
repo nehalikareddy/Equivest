@@ -10,7 +10,7 @@ export function errorHandler(error, _request, response, _next) {
     return;
   }
   const status = Number.isInteger(error.status) ? error.status : 500;
-  const message = status >= 500 && process.env.NODE_ENV === 'production'
+  const message = status >= 500 && process.env.NODE_ENV === 'production' && error.expose !== true
     ? 'An unexpected error occurred.'
     : error.message || 'An unexpected error occurred.';
   response.status(status).json({ error: message, ...(error.details ? { details: error.details } : {}) });
