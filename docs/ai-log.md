@@ -22,6 +22,16 @@ Only record work and checks that actually occurred. Update this log as developme
 - Corrections: The first elevated client test run exposed test DOM not being cleaned between tests; added explicit cleanup in the investor page test file. The next client test run passed.
 - Outcome: Investor preference and matching task verified. Score weights are documented as product choices, not predictions.
 
+### Task: Phase 4 investor shortlists
+
+- Date/time: 2026-10-14
+- Goal: Let investors save, review, and remove startups from a private shortlist.
+- Prompt summary: Implement the approved shortlist API, isolation, cleanup, UI, and relevant tests.
+- Generated changes: Added the unique investor/startup shortlist model and investor-only routes, shortlist service and page, save/remove actions on matches, startup detail navigation, and cleanup when a founder deletes a startup.
+- Validation: `npm.cmd run test:server` passed 5 suites and 30 tests. `npm.cmd run test:client` passed 4 suites and 10 tests. `npm.cmd run build` succeeded after transforming 1,660 modules (2.53 seconds). Frontend tests and build were run outside the sandbox because sandboxed esbuild could not read the Vite config.
+- Corrections: None required after the elevated client test run.
+- Outcome: Shortlist endpoints, investor isolation, duplicate prevention, delete cleanup, and UI verified.
+
 ### Task: Phase 1 authentication and role-based access
 
 - Date/time: 2026-10-14

@@ -8,14 +8,19 @@ vi.mock('../context/AuthContext.jsx', () => ({
   useAuth: () => ({ user: { name: 'Alex Investor' }, signOut: vi.fn() })
 }));
 vi.mock('../api/matchApi.js', () => ({ getMatches: vi.fn() }));
+vi.mock('../api/shortlistApi.js', () => ({ addToShortlist: vi.fn(), listShortlist: vi.fn() }));
 vi.mock('../api/investorApi.js', () => ({ getInvestorProfile: vi.fn(), saveInvestorProfile: vi.fn() }));
 
 import { getMatches } from '../api/matchApi.js';
+import { listShortlist } from '../api/shortlistApi.js';
 import { getInvestorProfile, saveInvestorProfile } from '../api/investorApi.js';
 
 describe('investor pages', () => {
   afterEach(cleanup);
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listShortlist.mockResolvedValue({ shortlist: [] });
+  });
 
   it('renders match scores and criterion explanations from the API', async () => {
     getMatches.mockResolvedValue({

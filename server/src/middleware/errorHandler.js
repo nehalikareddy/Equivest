@@ -1,7 +1,12 @@
 export function errorHandler(error, _request, response, _next) {
   if (response.headersSent) return;
   if (error.code === 11000) {
-    response.status(409).json({ error: 'An account with this email already exists.' });
+    const duplicateMessage = error.keyPattern?.email
+      ? 'An account with this email already exists.'
+      : error.keyPattern?.investor && error.keyPattern?.startup
+        ? 'Startup is already on your shortlist.'
+        : 'A record with those values already exists.';
+    response.status(409).json({ error: duplicateMessage });
     return;
   }
   const status = Number.isInteger(error.status) ? error.status : 500;

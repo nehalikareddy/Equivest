@@ -141,3 +141,20 @@ footer span { margin: 0 6px; }
 .success-alert { margin: 0 0 16px; padding: 11px 13px; color: #12684f; background: #e9f6f1; border: 1px solid #c6e8d9; border-radius: 7px; font-size: 13px; }
 @media (max-width: 800px) { .match-toolbar { align-items: flex-start; flex-direction: column; } .filter-controls { width: 100%; } .filter-controls label { flex: 1; } .filter-controls select { width: 100%; min-width: 0; } }
 @media (max-width: 560px) { .preferences-summary { align-items: flex-start; flex-direction: column; } .range-fields { grid-template-columns: 1fr; } }
+.match-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-top: 14px; }
+.shortlist-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 0 12px; color: #087b62; background: white; border: 1px solid #b9ddcf; border-radius: 7px; font: 700 12px 'DM Sans', sans-serif; cursor: pointer; }
+.shortlist-button:disabled { color: #718277; background: #f0f6f3; border-color: #d5e5dd; cursor: default; }
+.remove-shortlist { color: #8e3c36; border-color: #e8d2d0; }
+.startup-detail-card { margin: 4px 0 72px; padding: 32px; background: #fff; border: 1px solid #e1e9ec; border-radius: 13px; }
+.startup-detail-card h1 { margin: 16px 0 8px; color: #10243a; font-size: clamp(32px, 4vw, 44px); letter-spacing: -1.7px; }
+.detail-score { margin-top: 20px; color: #087b62; font-size: 13px; font-weight: 700; }
+.detail-tagline { color: #68798a; font-size: 17px; }
+.startup-detail-card .startup-facts { justify-content: flex-start; gap: 40px; }
+.startup-detail-card .startup-facts dd { font-size: 14px; }
+.startup-detail-card h2 { margin: 28px 0 10px; color: #23394c; font-size: 18px; }
+.full-pitch { color: #536b7c; line-height: 1.8; white-space: pre-line; }
+.detail-website { color: #087b62; font-weight: 700; }
+.detail-reasons { margin-top: 30px; padding-top: 10px; border-top: 1px solid #edf1f3; }
+.detail-reasons ul { display: grid; gap: 10px; padding-left: 18px; color: #536b7c; font-size: 13px; }
+.detail-reasons strong { color: #087b62; }
+@media (max-width: 560px) { .startup-detail-card { padding: 22px; } .startup-detail-card .startup-facts { flex-direction: column; gap: 14px; } }

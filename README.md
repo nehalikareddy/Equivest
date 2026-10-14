@@ -53,6 +53,14 @@ Investor APIs:
 - `PUT /api/investor/profile` — validate and save preferences
 - `GET /api/matches` — ranked, explained startups; optional `industry`, `stage`, and `sort=score|amount` filters
 
+## Shortlists
+
+Investor shortlists are private to the authenticated investor. A unique investor/startup index prevents duplicate saves, and deleting a startup removes its shortlist entries.
+
+- `GET /api/shortlist` — list the current investor’s saved startups
+- `POST /api/shortlist/:startupId` — save a startup
+- `DELETE /api/shortlist/:startupId` — remove a saved startup
+
 ## Verification
 
 - `npm.cmd run dev` starts client and server together.

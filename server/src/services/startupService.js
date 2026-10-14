@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Startup from '../models/Startup.js';
+import Shortlist from '../models/Shortlist.js';
 
 const notFound = () => Object.assign(new Error('Startup not found.'), { status: 404 });
 
@@ -52,4 +53,5 @@ export async function deleteFounderStartup(id, founderId) {
   if (!mongoose.isValidObjectId(id)) throw notFound();
   const startup = await Startup.findOneAndDelete({ _id: id, founder: founderId });
   if (!startup) throw notFound();
+  await Shortlist.deleteMany({ startup: startup._id });
 }

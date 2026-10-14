@@ -8,6 +8,8 @@ import FounderDashboard from './pages/FounderDashboard.jsx';
 import StartupFormPage from './pages/StartupFormPage.jsx';
 import InvestorDashboard from './pages/InvestorDashboard.jsx';
 import InvestorPreferencesPage from './pages/InvestorPreferencesPage.jsx';
+import ShortlistPage from './pages/ShortlistPage.jsx';
+import StartupDetailsPage from './pages/StartupDetailsPage.jsx';
 
 function LandingPage() {
   const { user, isLoading } = useAuth();
@@ -66,7 +68,9 @@ export default function App() {
       <Route element={<ProtectedRoute role="investor" />}>
         <Route path="/investor" element={<InvestorDashboard />} />
         <Route path="/investor/preferences" element={<InvestorPreferencesPage />} />
+        <Route path="/investor/shortlist" element={<ShortlistPage />} />
       </Route>
+      <Route element={<ProtectedRoute />}><Route path="/startups/:startupId" element={<StartupDetailsPage />} /></Route>
       <Route element={<ProtectedRoute />}><Route path="/account" element={<RoleRedirect />} /></Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

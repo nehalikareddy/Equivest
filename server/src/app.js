@@ -5,6 +5,7 @@ import authRoutes from './routes/authRoutes.js';
 import startupRoutes from './routes/startupRoutes.js';
 import investorRoutes from './routes/investorRoutes.js';
 import matchRoutes from './routes/matchRoutes.js';
+import shortlistRoutes from './routes/shortlistRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -20,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/startups', startupRoutes);
 app.use('/api/investor', investorRoutes);
 app.use('/api/matches', matchRoutes);
+app.use('/api/shortlist', shortlistRoutes);
 app.use(errorHandler);
 
 export default app;
