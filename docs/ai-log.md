@@ -73,3 +73,13 @@ pm.cmd run build succeeded (1,650 modules transformed).
 - Validation: `npm.cmd run test:server` passed 6 suites and 35 tests, including mocked provider success, missing key, malformed/incomplete output, provider failures, timeout, and ownership checks. `npm.cmd run test:client` passed 4 files and 12 tests, including feedback and the unconfigured-provider retry UI. `npm.cmd run build` succeeded after transforming 1,660 modules. Client tests and build required filesystem access because sandboxed esbuild could not read the Vite config. No live provider request was made.
 - Corrections: Added explicit cleanup to the startup page tests after the first client run found prior rendered dashboard elements leaking into a retry test.
 - Outcome: Optional pitch analysis is implemented and verified with mocked provider responses; real AI feedback remains dependent on setting `AI_PROVIDER_API_KEY` on the server.
+
+### Task: Phase 7 security, documentation, and release review
+
+- Date/time: 2026-10-14
+- Goal: Review the implemented routes and deployment configuration, correct stale setup and feature documentation, and verify the repository and build state.
+- Prompt summary: Complete the approved security and release-readiness task only; inspect security-sensitive code and Git state, update documentation, and run the approved verification commands.
+- Generated changes: Replaced the outdated Phase 0/1 README with current setup, architecture, model, endpoint, matching, authentication/security, optional AI, testing, and limitation documentation. Recorded this review and its actual checks in this log.
+- Validation: `npm.cmd run test:server` passed 6 suites and 35 tests. `npm.cmd run test:client` passed 4 files and 12 tests after rerunning outside the sandbox. `npm.cmd run build` passed with 1,660 modules transformed after rerunning outside the sandbox. `git status --short --branch` showed the implementation branch tracking its origin and the README modification; `git ls-files --cached -- .env .env.example` listed only `.env.example`; `git diff --check` reported no whitespace errors (it warned that Git may convert README LF endings to CRLF).
+- Corrections: Replaced inaccurate claims that founder and investor workflows were still planned. Documented the actual sessionStorage bearer-token tradeoff and the fact that HTTP-only cookie auth and CSRF protection are not implemented in this version. No deployment or production-readiness claim was added.
+- Outcome: Documentation matches the implemented feature set; required test/build checks pass. No commit or deployment was performed.
