@@ -18,7 +18,16 @@ app.use((request, response, next) => {
 });
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 const clientOrigin = new URL(clientUrl).origin;
-app.use(cors({ origin: clientUrl, credentials: true }));
+const allowedOrigins = new Set([clientOrigin, 'http://localhost:5173', 'http://127.0.0.1:5173']);
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.has(origin)) {
+      return callback(null, origin || clientUrl);
+    }
+    return callback(null, false);
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '1mb' }));
 
 function stripMongoOperators(obj) {
@@ -48,7 +57,7 @@ app.use((request, response, next) => {
   const suppliedOrigin = request.get('origin') || request.get('referer');
   if (suppliedOrigin) {
     try {
-      if (new URL(suppliedOrigin).origin === clientOrigin) return next();
+      if (allowedOrigins.has(new URL(suppliedOrigin).origin)) return next();
     } catch { /* invalid origin/referer is rejected below */ }
     return response.status(403).json({ error: 'Invalid or missing CSRF protection.' });
   }
