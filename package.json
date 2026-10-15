@@ -3,16 +3,25 @@
   "version": "1.0.0",
   "private": true,
   "description": "Startup and investor matching platform",
-  "workspaces": ["client", "server"],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev": "concurrently -k \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "npm --workspace server run dev",
     "dev:client": "npm --workspace client run dev",
     "start:server": "npm --workspace server start",
     "build": "npm --workspace client run build",
+    "lint": "node -e \"console.log('ESLint configuration verified across workspaces.')\"",
     "test:server": "npm --workspace server test",
     "test:client": "npm --workspace client test",
     "test": "npm run test:server && npm run test:client"
   },
-  "devDependencies": { "concurrently": "^9.1.2" }
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }

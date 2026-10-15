@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CircleDollarSign } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { getInvestorProfile, saveInvestorProfile } from '../api/investorApi.js';
-
-const industries = ['Agriculture', 'Climate', 'Consumer', 'Education', 'FinTech', 'Healthcare', 'Manufacturing', 'Media', 'Real Estate', 'SaaS', 'Technology', 'Other'];
-const stages = ['Idea', 'Pre-Seed', 'Seed', 'Series A', 'Series B+'];
+import NavBar from '../components/common/NavBar.jsx';
+import { INDUSTRIES, STAGES } from '../constants/startupOptions.js';
 
 export default function InvestorPreferencesPage() {
   const navigate = useNavigate();
@@ -13,6 +12,8 @@ export default function InvestorPreferencesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+
+  useEffect(() => { document.title = 'Investment Preferences — EquiVest'; }, []);
 
   useEffect(() => {
     let active = true;
@@ -53,13 +54,13 @@ export default function InvestorPreferencesPage() {
 
   return (
     <main className="account-shell form-page">
-      <header className="topbar"><Link className="brand" to="/"><span className="brand-mark"><CircleDollarSign size={21} /></span><span>EquiVest</span></Link><Link className="nav-link" to="/investor">Investor dashboard</Link></header>
+      <NavBar showSignOut={false}><Link className="nav-link" to="/investor">Investor dashboard</Link></NavBar>
       <section className="form-page-heading"><Link className="back-link" to="/investor"><ArrowLeft size={16} /> Back to matches</Link><p className="eyebrow">Investor profile</p><h1>Investment preferences</h1><p>Choose the industries, stages, and funding range that guide your startup matches.</p></section>
-      {error && <div className="form-alert" role="alert">{error}</div>}
-      {notice && <div className="success-alert" role="status">{notice}</div>}
+      {error && <div className="form-alert" role="alert" aria-live="polite">{error}</div>}
+      {notice && <div className="success-alert" role="status" aria-live="polite">{notice}</div>}
       {isLoading ? <p className="loading-state" role="status">Loading your preferences…</p> : <form className="preferences-form" onSubmit={handleSubmit}>
-        <fieldset className="preference-group"><legend>Preferred industries</legend><p>Select one or more industries.</p><div className="choice-grid">{industries.map((industry) => <label className="choice-chip" key={industry}><input type="checkbox" checked={preferences.industries.includes(industry)} onChange={() => toggle('industries', industry)} /><span>{industry}</span></label>)}</div></fieldset>
-        <fieldset className="preference-group"><legend>Preferred funding stages</legend><p>Select stages that fit your investment focus.</p><div className="choice-grid">{stages.map((stage) => <label className="choice-chip" key={stage}><input type="checkbox" checked={preferences.stages.includes(stage)} onChange={() => toggle('stages', stage)} /><span>{stage}</span></label>)}</div></fieldset>
+        <fieldset className="preference-group"><legend>Preferred industries</legend><p>Select one or more industries.</p><div className="choice-grid">{INDUSTRIES.map((industry) => <label className="choice-chip" key={industry}><input type="checkbox" checked={preferences.industries.includes(industry)} onChange={() => toggle('industries', industry)} /><span>{industry}</span></label>)}</div></fieldset>
+        <fieldset className="preference-group"><legend>Preferred funding stages</legend><p>Select stages that fit your investment focus.</p><div className="choice-grid">{STAGES.map((stage) => <label className="choice-chip" key={stage}><input type="checkbox" checked={preferences.stages.includes(stage)} onChange={() => toggle('stages', stage)} /><span>{stage}</span></label>)}</div></fieldset>
         <fieldset className="preference-group"><legend>Investment range (INR)</legend><p>Set the amount you typically invest in a startup.</p><div className="range-fields"><div className="form-field"><label htmlFor="minimum-ticket">Minimum investment</label><input id="minimum-ticket" type="number" min="1" step="1" value={preferences.minTicket} onChange={(event) => setPreferences((current) => ({ ...current, minTicket: event.target.value }))} required /></div><div className="form-field"><label htmlFor="maximum-ticket">Maximum investment</label><input id="maximum-ticket" type="number" min="1" step="1" value={preferences.maxTicket} onChange={(event) => setPreferences((current) => ({ ...current, maxTicket: event.target.value }))} required /></div></div></fieldset>
         <div className="startup-form-actions"><Link to="/investor" className="secondary-link">Cancel</Link><button className="form-submit" type="submit" disabled={isSaving}>{isSaving ? 'Saving…' : 'Save preferences'}</button></div>
       </form>}

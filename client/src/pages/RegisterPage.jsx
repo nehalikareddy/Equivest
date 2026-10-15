@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -10,13 +10,21 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => { document.title = 'Create Account — EquiVest'; }, []);
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError('');
-    setIsSubmitting(true);
     const data = new FormData(event.currentTarget);
+    const password = data.get('password');
+    const confirmPassword = data.get('confirmPassword');
+    if (confirmPassword && password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setIsSubmitting(true);
     try {
-      const user = await signUp({ name: data.get('name'), email: data.get('email'), password: data.get('password'), role: data.get('role') });
+      const user = await signUp({ name: data.get('name'), email: data.get('email'), password, role: data.get('role') });
       navigate(user.role === 'founder' ? '/founder' : '/investor', { replace: true });
     } catch (submissionError) {
       setError(submissionError.response?.data?.error || 'Could not create your account. Please try again.');
@@ -30,7 +38,7 @@ export default function RegisterPage() {
         <p className="eyebrow">Get started</p>
         <h1 id="register-heading">Create your account</h1>
         <p className="auth-subtitle">Choose how you’ll use EquiVest. You can build your profile next.</p>
-        {error && <p className="form-alert" role="alert">{error}</p>}
+        {error && <p className="form-alert" role="alert" aria-live="polite">{error}</p>}
         <form onSubmit={handleSubmit}>
           <label htmlFor="register-name">Full name</label>
           <input id="register-name" name="name" type="text" autoComplete="name" minLength="2" maxLength="100" required />
@@ -41,6 +49,8 @@ export default function RegisterPage() {
             <input id="register-password" name="password" type={passwordVisible ? 'text' : 'password'} autoComplete="new-password" minLength="8" maxLength="128" required />
             <button type="button" className="visibility-toggle" aria-label={passwordVisible ? 'Hide password' : 'Show password'} onClick={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? <EyeOff size={18} /> : <Eye size={18} />}</button>
           </div>
+          <label htmlFor="register-confirm-password">Confirm password</label>
+          <input id="register-confirm-password" name="confirmPassword" type={passwordVisible ? 'text' : 'password'} autoComplete="new-password" minLength="8" maxLength="128" />
           <label htmlFor="register-role">I am a</label>
           <select id="register-role" name="role" defaultValue="founder" required>
             <option value="founder">Founder</option>

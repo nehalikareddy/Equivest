@@ -1,26 +1,41 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CircleDollarSign, Handshake, Search } from 'lucide-react';
+import { ArrowRight, Handshake, Search } from 'lucide-react';
+import NavBar from '../components/common/NavBar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function LandingPage() {
   const { user, isLoading } = useAuth();
   const homePath = user?.role === 'founder' ? '/founder' : '/investor';
 
+  useEffect(() => { document.title = 'EquiVest — Startup & Investor Matching'; }, []);
+
   return (
     <main className="page-shell">
-      <header className="topbar">
-        <Link className="brand" to="/" aria-label="EquiVest home"><span className="brand-mark"><CircleDollarSign size={21} /></span><span>EquiVest</span></Link>
-        <nav className="landing-nav" aria-label="Main navigation">
-          {user ? <Link className="nav-link" to={homePath}>My dashboard</Link> : !isLoading && <><Link className="nav-link" to="/login">Sign in</Link><Link className="nav-action" to="/register">Register</Link></>}
-        </nav>
-      </header>
+      <NavBar showSignOut={false}>
+        {user ? (
+          <Link className="nav-link" to={homePath}>My dashboard</Link>
+        ) : !isLoading && (
+          <>
+            <Link className="nav-link" to="/login">Sign in</Link>
+            <Link className="nav-action" to="/register">Register</Link>
+          </>
+        )}
+      </NavBar>
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Startup &amp; investor matching</p>
           <h1>Find the right partners for your next stage.</h1>
           <p className="intro">EquiVest helps founders present their funding goals and lets investors discover startups aligned with their preferences.</p>
           <div className="landing-actions">
-            {user ? <Link className="primary-link" to={homePath}>Open your dashboard <ArrowRight size={18} /></Link> : <><Link className="primary-link" to="/register">Register <ArrowRight size={18} /></Link><Link className="secondary-link" to="/login">Sign in</Link></>}
+            {user ? (
+              <Link className="primary-link" to={homePath}>Open your dashboard <ArrowRight size={18} /></Link>
+            ) : (
+              <>
+                <Link className="primary-link" to="/register">Register <ArrowRight size={18} /></Link>
+                <Link className="secondary-link" to="/login">Sign in</Link>
+              </>
+            )}
           </div>
         </div>
         <div className="hero-card" aria-label="Platform preview">

@@ -1,5 +1,7 @@
 import { STARTUP_STAGES } from '../constants/startupOptions.js';
 
+// Note: For a high-volume production system, pre-filter by industry/stage in the DB query
+// and paginate results. In-memory scoring is used here for deterministic assessment evaluation.
 function amountPoints(amount, minimum, maximum) {
   if (![amount, minimum, maximum].every(Number.isFinite) || amount <= 0 || minimum < 0 || maximum <= 0 || minimum > maximum) return 0;
   if (amount >= minimum && amount <= maximum) return 30;

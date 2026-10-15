@@ -168,3 +168,15 @@ footer span { margin: 0 6px; }
 .detail-reasons ul { display: grid; gap: 10px; padding-left: 18px; color: #536b7c; font-size: 13px; }
 .detail-reasons strong { color: #087b62; }
 @media (max-width: 560px) { .startup-detail-card { padding: 22px; } .startup-detail-card .startup-facts { flex-direction: column; gap: 14px; } }
+
+/* Skeleton loading & mobile hamburger menu */
+.mobile-menu-toggle { display: none; align-items: center; justify-content: center; width: 38px; height: 38px; color: #23394c; background: #fff; border: 1px solid #dce5e8; border-radius: 7px; cursor: pointer; }
+@media (max-width: 560px) {
+  .topbar { position: relative; }
+  .mobile-menu-toggle { display: inline-flex; }
+  .landing-nav { display: none; }
+  .landing-nav.nav-open { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; position: absolute; top: 86px; right: 0; left: 0; z-index: 20; padding: 16px 20px; background: #fff; border-bottom: 1px solid #e3eaee; box-shadow: 0 12px 24px #18364a12; }
+}
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 14px; }
+.skeleton-card { height: 190px; border-radius: 12px; background: linear-gradient(90deg, #e9eff2 25%, #f5f8fa 50%, #e9eff2 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }

@@ -10,8 +10,10 @@ export async function create(request, response, next) {
 }
 
 export async function listMine(request, response, next) {
-  try { response.json({ startups: await listFounderStartups(request.user._id) }); }
-  catch (error) { next(error); }
+  try {
+    const result = await listFounderStartups(request.user._id, request.query);
+    response.json(result);
+  } catch (error) { next(error); }
 }
 
 export async function getById(request, response, next) {

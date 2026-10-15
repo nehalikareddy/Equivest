@@ -26,9 +26,19 @@ export async function createStartup(founderId, fields) {
   return toPublicStartup(startup);
 }
 
-export async function listFounderStartups(founderId) {
-  const startups = await Startup.find({ founder: founderId }).sort({ createdAt: -1, _id: 1 });
-  return startups.map(toPublicStartup);
+export async function listFounderStartups(founderId, { page = 1, limit = 20 } = {}) {
+  const safePage = Math.max(1, parseInt(page, 10) || 1);
+  const safeLimit = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+  const skip = (safePage - 1) * safeLimit;
+  const filter = { founder: founderId };
+  const [startups, total] = await Promise.all([
+    Startup.find(filter).sort({ createdAt: -1, _id: 1 }).skip(skip).limit(safeLimit),
+    Startup.countDocuments(filter)
+  ]);
+  return {
+    startups: startups.map(toPublicStartup),
+    pagination: { page: safePage, limit: safeLimit, total, totalPages: Math.max(1, Math.ceil(total / safeLimit)) }
+  };
 }
 
 export async function getStartup(id, user) {

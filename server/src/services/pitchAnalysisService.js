@@ -15,6 +15,7 @@ export async function analyzeStartupPitch(pitch) {
     throw safeError('AI pitch analysis is not configured. Add AI_PROVIDER_API_KEY on the server to enable it.', 503);
   }
 
+  const timeoutMs = Number(process.env.AI_TIMEOUT_MS) || 15000;
   let response;
   try {
     response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -23,7 +24,7 @@ export async function analyzeStartupPitch(pitch) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(timeoutMs),
       body: JSON.stringify({
         model: process.env.AI_PROVIDER_MODEL || 'gpt-4o-mini',
         response_format: { type: 'json_object' },

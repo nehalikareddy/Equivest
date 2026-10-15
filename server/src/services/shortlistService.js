@@ -5,14 +5,24 @@ import { toPublicStartup } from './startupService.js';
 
 const notFound = () => Object.assign(new Error('Startup not found.'), { status: 404 });
 
-export async function listInvestorShortlist(investorId) {
-  const entries = await Shortlist.find({ investor: investorId }).sort({ createdAt: -1, _id: 1 }).populate('startup');
+export async function listInvestorShortlist(investorId, { page = 1, limit = 20 } = {}) {
+  const safePage = Math.max(1, parseInt(page, 10) || 1);
+  const safeLimit = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+  const skip = (safePage - 1) * safeLimit;
+  const filter = { investor: investorId };
+  const [entries, total] = await Promise.all([
+    Shortlist.find(filter).sort({ createdAt: -1, _id: 1 }).skip(skip).limit(safeLimit).populate('startup'),
+    Shortlist.countDocuments(filter)
+  ]);
   const saved = entries.filter((entry) => entry.startup);
-  return saved.map((entry) => ({
-    id: entry._id.toString(),
-    addedAt: entry.createdAt,
-    startup: toPublicStartup(entry.startup)
-  }));
+  return {
+    shortlist: saved.map((entry) => ({
+      id: entry._id.toString(),
+      addedAt: entry.createdAt,
+      startup: toPublicStartup(entry.startup)
+    })),
+    pagination: { page: safePage, limit: safeLimit, total, totalPages: Math.max(1, Math.ceil(total / safeLimit)) }
+  };
 }
 
 export async function addStartupToShortlist(investorId, startupId) {

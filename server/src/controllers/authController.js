@@ -1,10 +1,15 @@
 import { currentUser, loginUser, registerUser } from '../services/authService.js';
 
-const tokenCookieOptions = {
+const baseCookieOptions = {
   httpOnly: true,
   sameSite: 'lax',
   secure: process.env.NODE_ENV === 'production',
-  path: '/',
+  path: '/'
+};
+
+const tokenCookieOptions = {
+  ...baseCookieOptions,
+  maxAge: 24 * 60 * 60 * 1000 // 1 day, aligned with JWT_EXPIRES_IN
 };
 
 export async function register(request, response, next) {
@@ -24,7 +29,7 @@ export async function login(request, response, next) {
 }
 
 export function logout(_request, response) {
-  response.clearCookie('token', tokenCookieOptions);
+  response.clearCookie('token', baseCookieOptions);
   response.json({ message: 'Logged out' });
 }
 

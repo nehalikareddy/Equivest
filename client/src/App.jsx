@@ -10,18 +10,26 @@ import InvestorDashboard from './pages/InvestorDashboard.jsx';
 import InvestorPreferencesPage from './pages/InvestorPreferencesPage.jsx';
 import ShortlistPage from './pages/ShortlistPage.jsx';
 import StartupDetailsPage from './pages/StartupDetailsPage.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
 
 function RoleRedirect() {
   const { user } = useAuth();
   return <Navigate to={user.role === 'founder' ? '/founder' : '/investor'} replace />;
 }
 
+function PublicOnlyRoute({ children }) {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <p role="status" className="loading-state">Loading...</p>;
+  if (user) return <Navigate to={user.role === 'founder' ? '/founder' : '/investor'} replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+      <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
       <Route element={<ProtectedRoute role="founder" />}>
         <Route path="/founder" element={<FounderDashboard />} />
         <Route path="/founder/startups/new" element={<StartupFormPage />} />
@@ -34,7 +42,7 @@ export default function App() {
       </Route>
       <Route element={<ProtectedRoute />}><Route path="/startups/:startupId" element={<StartupDetailsPage />} /></Route>
       <Route element={<ProtectedRoute />}><Route path="/account" element={<RoleRedirect />} /></Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

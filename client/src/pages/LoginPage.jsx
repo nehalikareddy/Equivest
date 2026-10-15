@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => { document.title = 'Sign In — EquiVest'; }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -31,7 +33,7 @@ export default function LoginPage() {
         <p className="eyebrow">Welcome back</p>
         <h1 id="login-heading">Sign in to EquiVest</h1>
         <p className="auth-subtitle">Continue to your founder or investor account.</p>
-        {error && <p className="form-alert" role="alert">{error}</p>}
+        {error && <p className="form-alert" role="alert" aria-live="polite">{error}</p>}
         <form onSubmit={handleSubmit}>
           <label htmlFor="login-email">Email</label>
           <input id="login-email" name="email" type="email" autoComplete="email" required maxLength="254" />

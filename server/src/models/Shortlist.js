@@ -6,5 +6,6 @@ const shortlistSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 shortlistSchema.index({ investor: 1, startup: 1 }, { unique: true });
+shortlistSchema.index({ startup: 1 });
 
 export default mongoose.models.Shortlist || mongoose.model('Shortlist', shortlistSchema);

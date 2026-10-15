@@ -1,8 +1,10 @@
 import { addStartupToShortlist, listInvestorShortlist, removeStartupFromShortlist } from '../services/shortlistService.js';
 
 export async function list(request, response, next) {
-  try { response.json({ shortlist: await listInvestorShortlist(request.user._id) }); }
-  catch (error) { next(error); }
+  try {
+    const result = await listInvestorShortlist(request.user._id, request.query);
+    response.json(result);
+  } catch (error) { next(error); }
 }
 
 export async function add(request, response, next) {

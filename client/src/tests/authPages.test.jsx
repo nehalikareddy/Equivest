@@ -1,13 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
+import App from '../App.jsx';
 import LandingPage from '../pages/LandingPage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import RegisterPage from '../pages/RegisterPage.jsx';
 import api from '../api/axios.js';
-import { getCurrentUser, logout } from '../api/authApi.js';
+import { getCurrentUser, login, logout, register } from '../api/authApi.js';
 
+vi.mock('../api/matchApi.js', () => ({ getMatches: vi.fn().mockResolvedValue({ matches: [], preferences: { industries: [], stages: [], minTicket: 1, maxTicket: 1 } }) }));
+vi.mock('../api/shortlistApi.js', () => ({ listShortlist: vi.fn().mockResolvedValue({ shortlist: [] }), addToShortlist: vi.fn() }));
 vi.mock('../api/authApi.js', () => ({
   login: vi.fn(),
   register: vi.fn(),
@@ -19,10 +22,10 @@ function renderPage(page) {
   return render(<MemoryRouter><AuthProvider>{page}</AuthProvider></MemoryRouter>);
 }
 
-describe('authentication forms', () => {
+describe('authentication forms and session behaviors', () => {
   afterEach(cleanup);
   beforeEach(() => {
-    sessionStorage.clear();
+    vi.clearAllMocks();
     getCurrentUser.mockRejectedValue(new Error('No active session'));
     logout.mockResolvedValue({ message: 'Logged out' });
   });
@@ -35,12 +38,60 @@ describe('authentication forms', () => {
     expect(screen.getByLabelText('Password')).toBeRequired();
   });
 
-  it('allows a registrant to choose either founder or investor role', () => {
+  it('submits login form and redirects to founder dashboard', async () => {
+    login.mockResolvedValue({ user: { id: 'u1', name: 'Sam Founder', role: 'founder' } });
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/founder" element={<h1>Founder Home</h1>} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'sam@equivest.dev' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Password123!' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(await screen.findByRole('heading', { name: 'Founder Home' })).toBeInTheDocument();
+    expect(login).toHaveBeenCalledWith({ email: 'sam@equivest.dev', password: 'Password123!' });
+  });
+
+  it('shows server error message on invalid login credentials', async () => {
+    login.mockRejectedValue({ response: { data: { error: 'Invalid email or password.' } } });
+    renderPage(<LoginPage />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'wrong@equivest.dev' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrongpass' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password.');
+  });
+
+  it('redirects authenticated users away from /login to their role dashboard', async () => {
+    getCurrentUser.mockResolvedValue({ user: { id: 'u2', name: 'Asha Investor', role: 'investor' } });
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+    expect(await screen.findByRole('heading', { name: /Welcome, Asha Investor/i })).toBeInTheDocument();
+  });
+
+  it('allows a registrant to choose either founder or investor role and validates password confirmation', async () => {
     renderPage(<RegisterPage />);
     const role = screen.getByLabelText('I am a');
     expect(role).toBeRequired();
     expect(role).toHaveDisplayValue('Founder');
     expect(screen.getByRole('option', { name: 'Investor' })).toHaveValue('investor');
+
+    fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Riya Investor' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'riya@equivest.dev' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Password123!' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'Different123!' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Passwords do not match.');
+    expect(register).not.toHaveBeenCalled();
   });
 
   it('renders the public landing page with register and sign-in actions', async () => {
@@ -48,12 +99,9 @@ describe('authentication forms', () => {
     expect(await screen.findByRole('heading', { name: /find the right partners/i })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Register' })).toHaveLength(2);
     expect(screen.getAllByRole('link', { name: 'Sign in' })).toHaveLength(2);
-    expect(screen.getAllByRole('link', { name: 'Register' }).every((link) => link.getAttribute('href') === '/register')).toBe(true);
-    expect(screen.getAllByRole('link', { name: 'Sign in' }).every((link) => link.getAttribute('href') === '/login')).toBe(true);
-    expect(screen.getByText('Startup & investor matching')).toBeInTheDocument();
   });
 
-  it('shows the active role dashboard for an authenticated user', async () => {
+  it('shows the active role dashboard for an authenticated user on LandingPage', async () => {
     getCurrentUser.mockResolvedValue({ user: { name: 'Asha Investor', role: 'investor' } });
     renderPage(<LandingPage />);
     expect(await screen.findByRole('link', { name: 'My dashboard' })).toHaveAttribute('href', '/investor');

@@ -5,14 +5,14 @@ import InvestorDashboard from '../pages/InvestorDashboard.jsx';
 import InvestorPreferencesPage from '../pages/InvestorPreferencesPage.jsx';
 
 vi.mock('../context/AuthContext.jsx', () => ({
-  useAuth: () => ({ user: { name: 'Alex Investor' }, signOut: vi.fn() })
+  useAuth: () => ({ user: { name: 'Alex Investor', role: 'investor' }, signOut: vi.fn() })
 }));
 vi.mock('../api/matchApi.js', () => ({ getMatches: vi.fn() }));
 vi.mock('../api/shortlistApi.js', () => ({ addToShortlist: vi.fn(), listShortlist: vi.fn() }));
 vi.mock('../api/investorApi.js', () => ({ getInvestorProfile: vi.fn(), saveInvestorProfile: vi.fn() }));
 
 import { getMatches } from '../api/matchApi.js';
-import { listShortlist } from '../api/shortlistApi.js';
+import { addToShortlist, listShortlist } from '../api/shortlistApi.js';
 import { getInvestorProfile, saveInvestorProfile } from '../api/investorApi.js';
 
 describe('investor pages', () => {
@@ -22,16 +22,30 @@ describe('investor pages', () => {
     listShortlist.mockResolvedValue({ shortlist: [] });
   });
 
-  it('renders match scores and criterion explanations from the API', async () => {
+  it('renders match scores, criterion explanations, and saves a startup to shortlist', async () => {
     getMatches.mockResolvedValue({
       preferences: { industries: ['Technology'], stages: ['Seed'], minTicket: 100, maxTicket: 500 },
       matches: [{ startup: { id: 's1', name: 'Northstar Labs', tagline: 'A logistics platform', industry: 'Technology', stage: 'Seed', amountSought: 250, location: 'Pune', pitch: 'We improve delivery planning for local companies.' }, score: 85, reasons: [{ criterion: 'industry', matched: true, points: 40, message: 'Matches your preferred industry' }, { criterion: 'stage', matched: true, points: 30, message: 'Matches your preferred funding stage' }, { criterion: 'amount', matched: true, points: 15, message: 'Funding request is close to your investment range' }] }]
     });
+    addToShortlist.mockResolvedValue({ item: { id: 'sl-1' } });
+
     render(<MemoryRouter><InvestorDashboard /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Northstar Labs' })).toBeInTheDocument();
     expect(screen.getByText('85%')).toBeInTheDocument();
     fireEvent.click(screen.getByText('View pitch and matching reasons'));
     expect(screen.getByText('Matches your preferred industry')).toBeInTheDocument();
+
+    const shortlistBtn = await screen.findByRole('button', { name: 'Shortlist' });
+    await waitFor(() => expect(shortlistBtn).not.toBeDisabled());
+    fireEvent.click(shortlistBtn);
+    await waitFor(() => expect(addToShortlist).toHaveBeenCalledWith('s1'));
+    expect(await screen.findByRole('button', { name: 'Shortlisted' })).toBeDisabled();
+  });
+
+  it('shows error alert when match loading fails', async () => {
+    getMatches.mockRejectedValue({ response: { data: { error: 'Failed to compute matches.' } } });
+    render(<MemoryRouter><InvestorDashboard /></MemoryRouter>);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to compute matches.');
   });
 
   it('prevents saving an investment range where the minimum exceeds the maximum', async () => {

@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CircleDollarSign, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowRight, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { analyzeStartupPitch, deleteStartup, listMyStartups } from '../api/startupApi.js';
+import NavBar from '../components/common/NavBar.jsx';
+import StartupCard from '../components/StartupCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const money = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
-
 export default function FounderDashboard() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [startups, setStartups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [pitchAnalyses, setPitchAnalyses] = useState({});
+
+  useEffect(() => { document.title = 'Founder Dashboard — EquiVest'; }, []);
 
   const loadStartups = useCallback(async () => {
     setError('');
@@ -44,32 +46,48 @@ export default function FounderDashboard() {
 
   return (
     <main className="account-shell">
-      <header className="topbar">
-        <Link className="brand" to="/"><span className="brand-mark"><CircleDollarSign size={21} /></span><span>EquiVest</span></Link>
-        <div className="landing-nav"><span className="nav-link">Founder</span><button className="nav-link button-link" onClick={signOut}>Sign out</button></div>
-      </header>
+      <NavBar><span className="nav-link">Founder</span></NavBar>
       <section className="dashboard-heading">
         <div><p className="eyebrow">Founder workspace</p><h1>Welcome, {user.name}</h1><p>Manage your startup profiles and keep your funding story up to date.</p></div>
         <Link className="primary-link" to="/founder/startups/new"><Plus size={18} /> Add startup</Link>
       </section>
       <div className="dashboard-summary"><span className="summary-count">{isLoading ? '—' : startups.length}</span><span>Startup profiles</span></div>
-      {error && <div className="form-alert" role="alert">{error} {!isLoading && <button className="inline-button" onClick={loadStartups}>Retry</button>}</div>}
-      {isLoading ? <p className="loading-state" role="status">Loading your startups…</p> : startups.length === 0 ? (
+      {error && <div className="form-alert" role="alert" aria-live="polite">{error} {!isLoading && <button className="inline-button" onClick={loadStartups}>Retry</button>}</div>}
+      {isLoading ? <div className="loading-state" role="status" aria-live="polite"><span>Loading your startups…</span><div className="skeleton-grid" aria-hidden="true"><div className="skeleton-card" /><div className="skeleton-card" /></div></div> : startups.length === 0 ? (
         <section className="empty-state"><div className="empty-mark"><Plus size={22} /></div><h2>Start with your startup profile</h2><p>Share your company’s stage, funding goal, and pitch so investors can understand what you are building.</p><Link className="primary-link" to="/founder/startups/new">Create startup profile <ArrowRight size={18} /></Link></section>
       ) : (
         <section className="startup-grid" aria-label="Your startups">
-          {startups.map((startup) => <article className="startup-card" key={startup.id}>
-            <div className="startup-card-top"><span className="industry-pill">{startup.industry}</span><span className="stage-pill">{startup.stage}</span></div>
-            <h2>{startup.name}</h2><p className="startup-tagline">{startup.tagline}</p>
-            <dl className="startup-facts"><div><dt>Funding sought</dt><dd>{money.format(startup.amountSought)}</dd></div><div><dt>Location</dt><dd>{startup.location || 'Not specified'}</dd></div></dl>
-            <div className="startup-actions"><Link className="secondary-link" to={`/founder/startups/${startup.id}/edit`}>Edit profile</Link><button className="secondary-link" onClick={() => handleAnalyze(startup)} disabled={pitchAnalyses[startup.id]?.loading}><Sparkles size={16} />{pitchAnalyses[startup.id]?.loading ? 'Analyzing…' : 'Analyze pitch'}</button><button className="icon-button danger-button" aria-label={`Delete ${startup.name}`} onClick={() => handleDelete(startup)}><Trash2 size={17} /></button></div>
-            {pitchAnalyses[startup.id]?.error && <div className="form-alert" role="alert">{pitchAnalyses[startup.id].error} <button className="inline-button" onClick={() => handleAnalyze(startup)}>Retry</button></div>}
-            {pitchAnalyses[startup.id]?.analysis && <section className="pitch-analysis" aria-label={`${startup.name} pitch analysis`}>
-              <h3>Pitch feedback</h3><p>{pitchAnalyses[startup.id].analysis.summary}</p>
-              {['strengths', 'missingInformation', 'suggestions'].map((key) => <div key={key}><h4>{key === 'missingInformation' ? 'Missing or weak information' : key[0].toUpperCase() + key.slice(1)}</h4><ul>{pitchAnalyses[startup.id].analysis[key].map((item, index) => <li key={`${key}-${index}`}>{item}</li>)}</ul></div>)}
-              <small>AI generated feedback may be inaccurate and is not investment advice.</small>
-            </section>}
-          </article>)}
+          {startups.map((startup) => (
+            <StartupCard
+              key={startup.id}
+              startup={startup}
+              actions={
+                <>
+                  <Link className="secondary-link" to={`/founder/startups/${startup.id}/edit`}>Edit profile</Link>
+                  <button className="secondary-link" onClick={() => handleAnalyze(startup)} disabled={pitchAnalyses[startup.id]?.loading}>
+                    <Sparkles size={16} />{pitchAnalyses[startup.id]?.loading ? 'Analyzing…' : 'Analyze pitch'}
+                  </button>
+                  <button className="icon-button danger-button" aria-label={`Delete ${startup.name}`} onClick={() => handleDelete(startup)}>
+                    <Trash2 size={17} />
+                  </button>
+                </>
+              }
+            >
+              {pitchAnalyses[startup.id]?.error && <div className="form-alert" role="alert" aria-live="polite">{pitchAnalyses[startup.id].error} <button className="inline-button" onClick={() => handleAnalyze(startup)}>Retry</button></div>}
+              {pitchAnalyses[startup.id]?.analysis && (
+                <section className="pitch-analysis" aria-label={`${startup.name} pitch analysis`}>
+                  <h3>Pitch feedback</h3><p>{pitchAnalyses[startup.id].analysis.summary}</p>
+                  {['strengths', 'missingInformation', 'suggestions'].map((key) => (
+                    <div key={key}>
+                      <h4>{key === 'missingInformation' ? 'Missing or weak information' : key[0].toUpperCase() + key.slice(1)}</h4>
+                      <ul>{pitchAnalyses[startup.id].analysis[key].map((item, index) => <li key={`${key}-${index}`}>{item}</li>)}</ul>
+                    </div>
+                  ))}
+                  <small>AI generated feedback may be inaccurate and is not investment advice.</small>
+                </section>
+              )}
+            </StartupCard>
+          ))}
         </section>
       )}
     </main>
