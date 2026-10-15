@@ -100,3 +100,13 @@ Only record work and checks that actually occurred. Update this log as developme
 - Validation: `npm.cmd run test:server` passed 6 suites and 39 tests. `npm.cmd run test:client` passed 5 suites and 22 tests (61 tests total across both suites). `npm.cmd run build` transformed 1,667 modules in 2.32 seconds.
 - Corrections: Updated StartupDetailsPage back navigation to use `navigate(-1)` instead of hardcoded paths, and added confirm password validation to the registration flow.
 - Outcome: Component extraction complete, dead code eliminated, server hardened, and test suite expanded to 61 passing tests with a clean production build.
+
+### Task: Loopback origin normalization for CORS and CSRF
+
+- Date/time: 2026-10-15
+- Goal: Prevent CSRF false-positives and CORS rejection when navigating via `127.0.0.1` vs `localhost`.
+- Prompt summary: Fix CSRF verification error occurring when cookie-authenticated requests originate from the `127.0.0.1` loopback address in development.
+- Generated changes: Updated `server/src/app.js` to define `allowedOrigins` containing `clientOrigin`, `http://localhost:5173`, and `http://127.0.0.1:5173` for dynamic CORS origin reflection and CSRF origin validation.
+- Validation: `npm run test:server` passed 6 suites and 39 tests; `npm run test:client` passed 5 suites and 22 tests (61 tests total). Direct loopback request with cookie token and `Origin: http://127.0.0.1:5173` verified returning 200 OK.
+- Corrections: Expanded origin comparison from a single static string to an allowed loopback origins set so both Vite host modes function without security degradation.
+- Outcome: Loopback and localhost requests both authenticated cleanly with CSRF protection preserved.
