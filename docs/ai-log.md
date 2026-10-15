@@ -38,10 +38,7 @@ Only record work and checks that actually occurred. Update this log as developme
 - Goal: Implement JWT + HTTP-only cookie authentication, Zod request validation, role authorization, auth UI pages, and server/client tests.
 - Prompt summary: Implement authentication endpoints, User model with bcryptjs, role middleware, React AuthContext, Login/Register pages, and fix test runner configuration issues.
 - Generated changes: Added server auth model, validators, service, controller, routes, middleware, and server/tests/auth.test.js; added client Axios instance, AuthContext, ProtectedRoute, Login/Register pages, and client/src/tests/authPages.test.jsx.
-- Validation: Resolved workspace Jest resolution in server/package.json (5 passed in 
-pm.cmd run test:server). Fixed ReferenceError: expect is not defined in client/src/testSetup.js by importing @testing-library/jest-dom/vitest to match explicit Vitest imports (2 passed in 
-pm.cmd run test:client). 
-pm.cmd run build succeeded (1,650 modules transformed).
+- Validation: Resolved workspace Jest resolution in server/package.json (5 passed in `npm.cmd run test:server`). Fixed ReferenceError: expect is not defined in client/src/testSetup.js by importing @testing-library/jest-dom/vitest to match explicit Vitest imports (2 passed in `npm.cmd run test:client`). `npm.cmd run build` succeeded (1,650 modules transformed).
 - Corrections: Updated client/src/testSetup.js without enabling unnecessary global overrides.
 - Outcome: Phase 1 authentication, role checks, and test suites verified and passing.
 
@@ -93,3 +90,13 @@ pm.cmd run build succeeded (1,650 modules transformed).
 - Validation: `npm.cmd run test:server` passed 6 suites and 39 tests after correcting a cookie-clearing assertion to match Express's epoch `Expires` header. `npm.cmd run test:client` passed 4 files and 16 tests after running outside the sandbox (esbuild could not read `vite.config.js` in the sandbox) and correcting a test query that matched both landing-page Register links. `npm.cmd run build` passed with 1,661 modules transformed in 2.37 seconds.
 - Corrections: The first server run had one incorrect expectation for `Max-Age=0`; the actual clearing cookie uses `Expires=Thu, 01 Jan 1970 00:00:00 GMT`. The first client run outside the sandbox found the expected duplicate Register link; the test now verifies both links. No application behavior was changed to accommodate those test-only issues.
 - Outcome: Cookie authentication, logout, CSRF checks, landing page behavior, client session expiry, server/client suites, and production build were verified. No Git commit was created.
+
+### Task: Component refactoring, dead code cleanup, and test expansion
+
+- Date/time: 2026-10-15
+- Goal: Extract shared UI components, remove legacy session storage code, harden server security, and expand client behavioral test coverage.
+- Prompt summary: Refactor duplicated topbar into a shared NavBar, extract StartupCard and ErrorBoundary, centralize shared constants and currency formatter, eliminate dead sessionStorage calls, add NoSQL operator sanitization, request IDs, database indexes, and add behavioral tests for auth, startups, and investor flows.
+- Generated changes: Added `NavBar`, `StartupCard`, `ErrorBoundary`, `PublicOnlyRoute`, `NotFoundPage`, `client/src/constants/startupOptions.js`, `client/src/utils/format.js`, and `startupDetailsPage.test.jsx`. Cleaned up `axios.js` and `AuthContext.jsx`. Added `stripMongoOperators`, `X-Request-Id`, graceful shutdown, and indexes on `Startup.founder` and `Shortlist.startup`.
+- Validation: `npm.cmd run test:server` passed 6 suites and 39 tests. `npm.cmd run test:client` passed 5 suites and 22 tests (61 tests total across both suites). `npm.cmd run build` transformed 1,667 modules in 2.32 seconds.
+- Corrections: Updated StartupDetailsPage back navigation to use `navigate(-1)` instead of hardcoded paths, and added confirm password validation to the registration flow.
+- Outcome: Component extraction complete, dead code eliminated, server hardened, and test suite expanded to 61 passing tests with a clean production build.

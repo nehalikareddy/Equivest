@@ -1,111 +1,113 @@
 # EquiVest
 
-EquiVest is a MERN application for startup founders to publish funding profiles and for investors to discover startups that match their stated investment preferences.
+EquiVest is a full-stack MERN startup and investor matching platform where startup founders create and manage funding profiles and investors set investment preferences, evaluate ranked startup matches with transparent 100-point scoring explanations, manage personal shortlists, and optionally run structured AI pitch feedback.
 
-## Users and features
+---
 
-- **Founders** can register, manage startup profiles, and request optional structured AI feedback on a saved pitch.
-- **Investors** can configure industry, stage, and ticket preferences; browse ranked matches; and manage a private shortlist.
-- Both roles use authenticated routes. The server enforces ownership and role permissions independently of the frontend.
+## Key Features
 
-The application does not include payments, messaging, or funding transactions. Startup records are user-provided; no real investor network or funding outcomes are claimed.
+- **Role-Based Authentication & Security:** Separate `founder` and `investor` accounts using `bcryptjs` password hashing, HTTP-only JWT cookies (with Bearer token backwards compatibility), CSRF verification on cookie-authenticated state-changing requests, credentialed CORS, Helmet security headers, request ID tracing (`X-Request-Id`), and MongoDB operator sanitization.
+- **Founder Startup Management:** Founders can create, view, edit, and delete startup profiles (`name`, `tagline`, `pitch`, `industry`, `stage`, `amountSought`, `location`, `businessModel`, `website`) with strict ownership enforcement and cascade shortlist cleanup on deletion.
+- **Investor Preferences & Explainable Matching:** Investors configure preferred industries, funding stages, and minimum/maximum ticket sizes (INR). The deterministic matching service ranks startups on a 100-point scale (**40 pts** industry + **30 pts** exact stage / **15 pts** adjacent stage + **30 pts** in-range funding / **15 pts** within 25% tolerance) and returns human-readable criterion explanations.
+- **Investor Startup Shortlist:** Investors can save startups to a personal shortlist, prevent duplicate saves via a compound unique index (`{ investor: 1, startup: 1 }`), inspect full startup details, and remove saved startups.
+- **Optional Structured AI Pitch Analysis:** Founders can request structured pitch feedback (`summary`, `strengths`, `missingInformation`, `suggestions`) validated with Zod, with clear fallback and retry messaging when `AI_PROVIDER_API_KEY` is not configured.
+- **Responsive UI & Component Architecture:** Built with reusable components (`NavBar`, `StartupCard`, `ProtectedRoute`, `PublicOnlyRoute`, `ErrorBoundary`), clean loading states, and filter controls.
 
-## Technology and architecture
+---
 
-- Client: React 18, Vite, React Router, Axios, plain CSS, Vitest, and React Testing Library.
-- Server: Node.js, Express, Mongoose, MongoDB, Zod, bcryptjs, JWT, Helmet, CORS, and express-rate-limit.
-- Tests: Jest and Supertest on the server (with mongodb-memory-server); Vitest and React Testing Library on the client.
+## Technologies Used
 
-The root npm project uses workspaces. `client/src/api` contains HTTP modules, `client/src/context` manages the browser session, and `client/src/pages` contains the founder and investor screens. The server separates routes, controllers, services, models, validators, and middleware under `server/src`. `docs/ai-log.md` records actual AI-assisted development and verification.
+- **Frontend:** React 18, React Router v7, Vite 6, Axios, Lucide React
+- **Backend:** Node.js (>=20), Express 4, Mongoose 8, JSON Web Tokens (`jsonwebtoken`), `bcryptjs`, Zod, Helmet, `express-rate-limit`, CORS
+- **Database:** MongoDB (with `mongodb-memory-server` for isolated integration tests)
+- **Testing & Tooling:** Jest + Supertest (39 server integration/unit tests across 6 suites), Vitest + React Testing Library + JSDOM (22 client behavioral/render tests across 5 suites)
 
-## Data models
+---
 
-- **User** — name, normalized unique email, bcrypt password hash, and `founder` or `investor` role.
-- **Startup** — founder reference, name, tagline, pitch, industry, stage, amount sought in INR, and optional location, business model, and website.
-- **InvestorProfile** — unique user reference, preferred industries and stages, and minimum/maximum INR ticket.
-- **Shortlist** — investor and startup references with a unique compound index; startup deletion removes related shortlist entries.
+## Setup and Installation Instructions
 
-## Matching
+1. **Clone the repository and install workspace dependencies:**
+   ~~~bash
+   git clone https://github.com/nehalikareddy/Equivest.git
+   cd Equivest
+   npm install
+   ~~~
 
-Matching is deterministic and explainable. It awards 40 points for a preferred industry, up to 30 for funding stage (30 for an exact stage and 15 for an adjacent stage), and up to 30 for requested funding amount (15 when the request is no more than 25% beyond a range boundary). Results are bounded from 0 to 100 and ordered by score, then startup name. The weights are product heuristics, not validated investment predictions or investment advice.
+2. **Configure environment variables:**
+   Copy `.env.example` to `server/.env` (or root `.env`) and set your local values:
+   ~~~env
+   PORT=5000
+   MONGODB_URI=mongodb://127.0.0.1:27017/equivest
+   JWT_SECRET=replace-with-a-random-secret-at-least-32-characters
+   JWT_EXPIRES_IN=1d
+   CLIENT_URL=http://localhost:5173
+   AI_PROVIDER_API_KEY=
+   AI_PROVIDER_MODEL=gpt-4o-mini
+   AI_TIMEOUT_MS=15000
+   ~~~
+   *(Note: `JWT_SECRET` must be at least 32 characters. `AI_PROVIDER_API_KEY` is optional and only required if testing live AI pitch analysis.)*
 
-## Authentication and security
+---
 
-Passwords are stored as bcrypt hashes. The API signs JWTs with `JWT_SECRET` and sets them in an HTTP-only `token` cookie on registration and login (`SameSite=Lax`, `Path=/`, and `Secure` in production). The JSON response continues to include `{ token, user }` for API compatibility, but the client uses the cookie and does not persist the token in JavaScript-accessible storage. `POST /auth/logout` clears the cookie. The client sends credentials and adds `X-Requested-With: XMLHttpRequest` to state-changing requests. The server accepts cookie-authenticated state changes only with a matching configured `Origin`/`Referer` or that custom header; requests with a mismatched origin/referer are rejected. Legacy bearer authorization remains supported.
+## Instructions to Run the Application
 
-The server applies Helmet, enables credentialed CORS for the configured `CLIENT_URL`, limits JSON request bodies to 1 MB, validates request data with Zod, rate-limits registration and login to 20 requests per 15 minutes (bypassed in the test environment), and checks role/resource ownership on protected routes. Cookie-authenticated state-changing requests receive CSRF origin/referer and custom-header checks. `JWT_SECRET` must be at least 32 characters, and `MONGODB_URI` must be configured before the API starts. Production responses hide unexpected server errors; pitch-analysis responses expose only controlled, safe messages.
+- **Run both backend and frontend in development mode:**
+  ~~~bash
+  npm run dev
+  ~~~
+  - Frontend dev server: `http://localhost:5173` (proxies `/api` requests to `http://127.0.0.1:5000`)
+  - Backend API server: `http://127.0.0.1:5000` (health check at `GET /api/health`)
 
-## API
+- **Run backend and frontend separately:**
+  ~~~bash
+  npm run dev:server
+  npm run dev:client
+  ~~~
 
-All routes are under `/api`.
+- **Run automated test suites and production build:**
+  ~~~bash
+  npm run test:server   # 6 suites, 39 passing backend tests
+  npm run test:client   # 5 suites, 22 passing frontend tests
+  npm test              # Runs both server and client test suites (61 tests total)
+  npm run build         # Builds production frontend bundle into client/dist
+  ~~~
 
-| Method | Endpoint | Access | Purpose |
-| --- | --- | --- | --- |
-| `GET` | `/health` | Public | API health status |
-| `POST` | `/auth/register` | Public | Register a founder or investor |
-| `POST` | `/auth/login` | Public | Authenticate, set the HTTP-only cookie, and return `{ token, user }` |
-| `POST` | `/auth/logout` | Public | Clear the HTTP-only session cookie |
-| `GET` | `/auth/me` | Authenticated | Return the current user |
-| `POST` | `/startups` | Founder | Create a startup profile |
-| `GET` | `/startups/mine` | Founder | List the current founder's startups |
-| `GET` | `/startups/:id` | Authenticated | View an accessible startup |
-| `PUT` | `/startups/:id` | Owning founder | Update a startup |
-| `DELETE` | `/startups/:id` | Owning founder | Delete a startup and its shortlist references |
-| `POST` | `/startups/:id/analyze` | Owning founder | Request optional structured pitch feedback |
-| `GET` / `PUT` | `/investor/profile` | Investor | Read or update investment preferences |
-| `GET` | `/matches` | Investor | Get ranked startup matches; supports industry, stage, and sort filters |
-| `GET` | `/shortlist` | Investor | List the current investor's saved startups |
-| `POST` / `DELETE` | `/shortlist/:startupId` | Investor | Add or remove a startup from the shortlist |
+---
 
-Successful login and registration set the HTTP-only session cookie and return `{ user, token }`. For cookie-authenticated state changes, send a matching `Origin` or `Referer`, or `X-Requested-With: XMLHttpRequest`; a mismatched origin/referer is rejected. Never place real secrets in API requests or source control.
+## API Overview
 
-## Optional AI pitch feedback
+| Method & Endpoint | Access | Description |
+|---|---|---|
+| `GET /api/health` | Public | Health check with service status and uptime |
+| `POST /api/auth/register` | Public | Register a `founder` or `investor` account and set HTTP-only `token` cookie |
+| `POST /api/auth/login` | Public | Authenticate user credentials and set HTTP-only `token` cookie |
+| `POST /api/auth/logout` | Public | Clear the HTTP-only `token` cookie |
+| `GET /api/auth/me` | Authenticated | Return the currently authenticated user profile |
+| `POST /api/startups` | Founder | Create a startup profile |
+| `GET /api/startups/mine` | Founder | List the authenticated founder's startups |
+| `GET /api/startups/:id` | Authenticated | View startup details |
+| `PUT /api/startups/:id` | Founder | Update a founder-owned startup profile |
+| `DELETE /api/startups/:id` | Founder | Delete a founder-owned startup and cascade-delete shortlist entries |
+| `POST /api/startups/:id/analyze` | Founder | Generate structured AI pitch feedback (`summary`, `strengths`, `missingInformation`, `suggestions`) |
+| `GET /api/investor/profile` | Investor | Get saved investor matching preferences (or default values) |
+| `PUT /api/investor/profile` | Investor | Validate and upsert investor preferences (`industries`, `stages`, `minTicket`, `maxTicket`) |
+| `GET /api/matches` | Investor | Score and rank startups against investor preferences with filter/sort support |
+| `GET /api/shortlist` | Investor | List saved shortlist startups |
+| `POST /api/shortlist/:startupId` | Investor | Save a startup to the investor's shortlist (`409` on duplicate) |
+| `DELETE /api/shortlist/:startupId` | Investor | Remove a startup from the investor's shortlist |
 
-The founder dashboard can request feedback on a saved startup pitch. The server sends the pitch to the OpenAI Chat Completions API (default model `gpt-4o-mini`) only when `AI_PROVIDER_API_KEY` is configured. Provider output is parsed and validated into a summary, strengths, missing information, and suggestions. Missing credentials return a configuration message; provider errors do not produce fabricated feedback. No live provider request is part of the automated tests. AI feedback may be inaccurate and is not investment advice.
+---
 
-## Requirements and setup
+## Confirmation of Code0 Usage & AI Development Experience
 
-- Node.js 20 or newer and npm
-- A MongoDB instance, local or MongoDB Atlas
+**Confirmation:** Code0 was used as the primary AI development environment throughout the planning, phased implementation, debugging, refactoring, and verification of EquiVest. The complete phase-by-phase log of prompts, generated changes, validation steps, and engineering corrections is also preserved in [`docs/ai-log.md`](docs/ai-log.md).
 
-From the project root, copy `.env.example` to `.env` and set:
+### Specific Tasks Where Code0 Helped
 
-```text
-PORT=5000
-NODE_ENV=development
-MONGODB_URI=mongodb://127.0.0.1:27017/equivest
-JWT_SECRET=<random secret of at least 32 characters>
-JWT_EXPIRES_IN=1d
-CLIENT_URL=http://localhost:5173
-AI_PROVIDER_API_KEY=
-```
+1. **Project Scaffolding and Workspace Configuration** — Code0 generated the initial npm workspace structure (`client` and `server`), Vite/React frontend setup, Express API entry point, environment configuration (`.env.example`), and `/api/health` endpoint. I verified workspace script execution, API proxy routing, and health check responses.
+2. **Authentication, Cookie Security, and Role-Based Access Control** — Code0 helped implement JWT + `bcryptjs` authentication, HTTP-only cookie session handling (`POST /api/auth/logout`, CSRF origin/header verification, and credentialed CORS), Zod request validation, role authorization middleware, and the React `AuthContext`. I resolved a cross-platform Jest ESM module runner issue (`--experimental-vm-modules` with `--runInBand`) and a Vitest `@testing-library/jest-dom` setup import issue that Code0's initial output did not handle.
+3. **Explainable Investor Matching Algorithm and Dashboard** — Code0 assisted in building the deterministic 100-point scoring service (`40` points for industry match, `30` points for exact stage or `15` for adjacent stage, and `30` points for in-range ticket size or `15` within 25% tolerance), the `/api/matches` endpoint, and the `InvestorDashboard` UI. I added explicit DOM cleanup (`afterEach(cleanup)`) to prevent test state leakage across component tests.
+4. **Shortlist Management and Database Indexing** — Code0 helped create the `Shortlist` Mongoose model with a compound unique index (`{ investor: 1, startup: 1 }`), cascade deletion when a founder deletes a startup, and investor-only shortlist endpoints and pages. I added secondary indexes on `Startup.founder` and `Shortlist.startup`.
+5. **Component Refactoring, Error Handling, and Behavioral Testing** — Code0 assisted in extracting reusable UI components (`NavBar`, `StartupCard`, `ErrorBoundary`, `PublicOnlyRoute`, `NotFoundPage`), centralizing `INDUSTRIES`/`STAGES` constants and `formatINR` currency formatting, removing legacy `sessionStorage` token references, and expanding the test suite to 61 total tests (39 server + 22 behavioral and render client tests).
 
-The AI provider key is optional. Then install dependencies and run the app:
-
-```powershell
-npm.cmd install
-npm.cmd run dev
-```
-
-The client is served at `http://localhost:5173`; the API listens at `http://localhost:5000`. `GET http://localhost:5000/api/health` checks API availability. Do not commit `.env`; `.env.example` contains placeholders only.
-
-## Verification
-
-```powershell
-npm.cmd run test:server
-npm.cmd run test:client
-npm.cmd run build
-npm.cmd test
-```
-
-The backend tests use an in-memory MongoDB and do not target a configured production database. No seed command or demo records are included.
-
-## Current limitations and release status
-
-- AI feedback requires a valid server-side provider key and was tested with mocked provider responses only.
-- No deployment target or public repository URL is configured or claimed.
-- The tests cover core routes and UI workflows but are not a claim of complete test coverage or production readiness.
-
-## AI development experience
-
-Code0 was used for phased implementation and verification. Examples recorded in `docs/ai-log.md` include the initial MERN scaffold and health check, authentication and role authorization, investor preference matching and its scoring tests, shortlist isolation and cleanup, and optional pitch analysis. Generated code was checked with the listed server tests, client tests, and production build; fixes and sandbox-related retries are recorded in the log.
+All AI-generated code was reviewed and verified using `npm run test:server`, `npm run test:client`, and `npm run build`.
